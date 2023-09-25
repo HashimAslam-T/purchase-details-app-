@@ -1,7 +1,7 @@
 const db = require("../database/db");
 
 const getDetails = async (req, res) => {
-    const customerId  = req.body.c_id;
+    const {customerId}  = req.body;
 
     try {
 
@@ -10,7 +10,8 @@ const getDetails = async (req, res) => {
         {
           return res.status(500).send("Customer does not exist")  
         }
-        const query = `SELECT prod_quantity, prod_name FROM orders WHERE cust_id = ?`;
+        const query = `SELECT prod_quantity, product_name, product_description, product_price FROM orders join productinfo 
+                       on orders.cust_id = ? and orders.prod_id = productinfo.product_id`;
         const [result] = await db.query(query, [customerId]);
         if(!result.length)
         {

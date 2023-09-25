@@ -5,6 +5,8 @@ const db = require('../database/db');
 const placeOrder = async(req,res) =>{
     
     const{customerId,products} = req.body;
+    const productsQuery = await db.query(`select * from productinfo`);
+    const allProducts = productsQuery[0];   
 
     try
     {
@@ -20,46 +22,60 @@ const placeOrder = async(req,res) =>{
         const productId = product.prodId;
         const productQuantity = product.prodQuantity;
 
-        const [prodQuery] =  await db.query(`select product_name, 
-        product_quantity from productinfo where product_id = ?`,[productId]);
-        
-
-        if(!prodQuery.length)
+        const findProduct = allProducts.find(obj => obj.product_id === productId);
+        if (!findProduct)
         {
-          return res.status(500).send(`The given product id ${productId} does not exist`);
+           return res.status(500).send(`The given product id ${productId} does not exist`);   
         }
-        
-        if( prodQuery[0].product_quantity - productQuantity <=0)
+        if( findProduct.product_quantity - productQuantity <=0)
         {
-         if(prodQuery[0].product_quantity == 0)
+         if(findProduct.product_quantity == 0)
          {
             return res.status(500).send(`The quantity of the given product id ${productId} is nill`);
          }
          else
          {
-            return res.status(500).send(`please choose lesser quantity than ${prodQuery[0].product_quantity}  for product_id: ${productId}. `);
+            return res.status(500).send(`please choose lesser quantity than ${findProduct.product_quantity}  for product_id: ${productId}. `);
          }
         }
+
        }
+
+       const orders =[];
+       const reduceQuantity = [];
 
        for(const product of products)
        {
         const productId = product.prodId;
         const productQuantity = product.prodQuantity;
 
-        const productNameQuery =  await db.query(`select product_name 
-        from productinfo where product_id = ?`,[productId]);
+        const findProduct = allProducts.find(obj => obj.product_id === productId);
+        const productName = findProduct.product_name;
 
-        const productName = productNameQuery[0][0].product_name;
+        const orderInsert = [customerId,productId,productName,productQuantity];
+        orders.push(orderInsert);
 
-        await db.query(`insert into orders(cust_id,prod_id,prod_name,
-            prod_quantity) values(?,?,?,?)`,[customerId,productId,productName,productQuantity]);
+        const subtractQauntity = [productQuantity,productId];
+        reduceQuantity.push(subtractQauntity);
 
-
-        await db.query(`update productinfo set product_quantity = 
-        product_quantity - ? where product_id = ?`,[productQuantity,productId]);
        }
+       
+       await db.query(`insert into orders(cust_id,prod_id,prod_name,
+         prod_quantity) values ?`,[orders]);
 
+         let sql = "UPDATE productinfo SET product_quantity = CASE product_id ";
+         reduceQuantity.forEach(item => {
+           sql += `WHEN ${item[1]} THEN product_quantity - ${item[0]} `;
+         });
+         sql += "END WHERE product_id IN (";
+         reduceQuantity.forEach((item, index) => {
+           sql += `${item[1]}${index < reduceQuantity.length - 1 ? ',' : ''} `;
+         });
+         sql += ")";
+
+       await db.query(sql);
+      
+       
        res.send(`Order Placed`);
 
     }
