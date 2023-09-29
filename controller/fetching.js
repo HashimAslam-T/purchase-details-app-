@@ -1,6 +1,24 @@
 const db = require("../database/db");
+const {fetchSchema} = require('../validate');
+
+const validatefetch = async(req,res,next) =>
+{
+  try
+  {
+    const value = req.body;
+    const validatedData = await fetchSchema.validateAsync(value);
+    console.log(validatedData);
+    next();
+  }
+  catch(err)
+  {
+    console.error('Validation error:', err.details[0].message);
+    res.status(400).send('Validation error:'+ err.details[0].message); 
+  }
+}
 
 const getDetails = async (req, res) => {
+    
     const {customerId}  = req.body;
 
     try {
@@ -26,4 +44,4 @@ const getDetails = async (req, res) => {
     
 };
 
-module.exports = { getDetails };
+module.exports = { validatefetch,getDetails };

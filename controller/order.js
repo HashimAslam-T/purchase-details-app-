@@ -1,4 +1,22 @@
 const db = require('../database/db');
+const {orderSchema} = require(`../validate`)
+
+
+const validateOrder = async(req,res,next) =>
+{
+  try
+  {
+    const value = req.body;
+    const validatedData = await orderSchema.validateAsync(value);
+    console.log(validatedData);
+    next();
+  }
+  catch(err)
+  {
+    console.error('Validation error:', err.details[0].message);
+    res.status(400).send('Validation error:'+ err.details[0].message); 
+  }
+}
 
 //placeorder
 
@@ -43,16 +61,15 @@ const placeOrder = async(req,res) =>{
 
        const orders =[];
        const reduceQuantity = [];
+       const r = await db.query(`insert into mainorder (order_status,cust_id) values ('order placed',?)`,[customerId]);
+       const orderId = r[0].insertId;
 
        for(const product of products)
        {
         const productId = product.prodId;
         const productQuantity = product.prodQuantity;
 
-        const findProduct = allProducts.find(obj => obj.product_id === productId);
-        const productName = findProduct.product_name;
-
-        const orderInsert = [customerId,productId,productName,productQuantity];
+        const orderInsert = [orderId,customerId,productId,productQuantity];
         orders.push(orderInsert);
 
         const subtractQauntity = [productQuantity,productId];
@@ -60,7 +77,7 @@ const placeOrder = async(req,res) =>{
 
        }
        
-       await db.query(`insert into orders(cust_id,prod_id,prod_name,
+       await db.query(`insert into orders(ord_id,cust_id,prod_id,
          prod_quantity) values ?`,[orders]);
 
          let sql = "UPDATE productinfo SET product_quantity = CASE product_id ";
@@ -68,7 +85,7 @@ const placeOrder = async(req,res) =>{
            sql += `WHEN ${item[1]} THEN product_quantity - ${item[0]} `;
          });
          sql += "END WHERE product_id IN (";
-         reduceQuantity.forEach((item, index) => {
+         reduceQuantity.forEach((item, index) => { 
            sql += `${item[1]}${index < reduceQuantity.length - 1 ? ',' : ''} `;
          });
          sql += ")";
@@ -90,4 +107,4 @@ const placeOrder = async(req,res) =>{
 };
     
     
-module.exports = {placeOrder};   
+module.exports = {validateOrder,placeOrder};   

@@ -1,4 +1,22 @@
 const db = require("../database/db")
+const {productSchema} = require('../validate')
+
+const validateProduct = async(req,res,next) =>
+{
+  try
+  {
+    const value = req.body;
+    const validatedData = await productSchema.validateAsync(value);
+    console.log(validatedData);
+    next();
+  }
+  catch(err)
+  {
+    console.error('Validation error:', err.details[0].message);
+    res.status(400).send('Validation error:'+ err.details[0].message); 
+  }
+}
+
 
 //create a product
 
@@ -23,4 +41,4 @@ const postProduct =  async(req,res)=>{
     
 }
 
-module.exports.postProduct = postProduct;
+module.exports = {validateProduct,postProduct};
