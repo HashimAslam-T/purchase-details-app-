@@ -3,6 +3,8 @@ const router1 = require('./router/productapi');
 const router2 = require('./router/orderapi');
 const router3 = require('./router/fetchingapi');
 const router4 = require('./router/updateorderapi');
+const router5 = require('./router/mailingapi');
+
 
 
 const app = express();
@@ -12,6 +14,7 @@ app.use('/',router1);
 app.use('/',router2);
 app.use('/',router3);
 app.use('/',router4);
+app.use('/',router5);
 
   
 app.listen(3000,(err) =>{
