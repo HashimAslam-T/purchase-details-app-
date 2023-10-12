@@ -4,6 +4,7 @@ const router2 = require('./router/orderapi');
 const router3 = require('./router/fetchingapi');
 const router4 = require('./router/updateorderapi');
 const router5 = require('./router/mailingapi');
+const router6 = require('./router/excelToJsonApi');
 
 
 
@@ -15,6 +16,7 @@ app.use('/',router2);
 app.use('/',router3);
 app.use('/',router4);
 app.use('/',router5);
+app.use('/',router6);
 
   
 app.listen(3000,(err) =>{
